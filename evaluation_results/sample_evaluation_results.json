@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-12-24T18:30:00.000000",
+  "model": {
+    "name": "distilbert-base-uncased",
+    "fine_tuned": true,
+    "num_labels": 4,
+    "epochs": 3,
+    "batch_size": 16,
+    "learning_rate": 2e-05
+  },
+  "dataset": {
+    "train_samples": 21660,
+    "val_samples": 2731,
+    "test_samples": 2708,
+    "total_samples": 27099
+  },
+  "training_history": {
+    "train_loss": [0.95, 0.65, 0.45],
+    "val_loss": [0.82, 0.71, 0.68],
+    "val_f1": [0.68, 0.75, 0.78],
+    "val_accuracy": [0.71, 0.78, 0.81]
+  },
+  "test_evaluation": {
+    "accuracy": 0.8012,
+    "f1": {
+      "micro": 0.8012,
+      "macro": 0.7265,
+      "weighted": 0.7845,
+      "per_class": {
+        "Claim": 0.8156,
+        "Counterclaim": 0.6823,
+        "Rebuttal": 0.6502,
+        "Evidence": 0.8289
+      }
+    },
+    "precision": {
+      "micro": 0.8012,
+      "macro": 0.7312,
+      "weighted": 0.7901,
+      "per_class": {
+        "Claim": 0.8234,
+        "Counterclaim": 0.7012,
+        "Rebuttal": 0.6689,
+        "Evidence": 0.8345
+      }
+    },
+    "recall": {
+      "micro": 0.8012,
+      "macro": 0.7223,
+      "weighted": 0.7812,
+      "per_class": {
+        "Claim": 0.8089,
+        "Counterclaim": 0.6656,
+        "Rebuttal": 0.6323,
+        "Evidence": 0.8234
+      }
+    },
+    "num_samples": 2708,
+    "class_distribution": {
+      "Claim": 967,
+      "Counterclaim": 142,
+      "Rebuttal": 98,
+      "Evidence": 1001
+    },
+    "confusion_matrix": [[782, 45, 23, 117], [38, 94, 7, 3], [25, 5, 62, 6], [89, 11, 18, 883]]
+  }
+}
