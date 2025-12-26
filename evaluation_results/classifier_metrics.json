@@ -1,0 +1,66 @@
+{
+  "accuracy": 0.1781115879828326,
+  "macro_f1": 0.075591985428051,
+  "weighted_f1": 0.053855234253461226,
+  "num_samples": 466,
+  "per_class": {
+    "Claim": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 332
+    },
+    "Evidence": {
+      "precision": 0.1781115879828326,
+      "recall": 1.0,
+      "f1_score": 0.302367941712204,
+      "support": 83
+    },
+    "Counterclaim": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 38
+    },
+    "Rebuttal": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "support": 13
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "Claim",
+      "Evidence",
+      "Counterclaim",
+      "Rebuttal"
+    ],
+    "matrix": [
+      [
+        0,
+        332,
+        0,
+        0
+      ],
+      [
+        0,
+        83,
+        0,
+        0
+      ],
+      [
+        0,
+        38,
+        0,
+        0
+      ],
+      [
+        0,
+        13,
+        0,
+        0
+      ]
+    ]
+  }
+}
