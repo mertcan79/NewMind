@@ -22,8 +22,8 @@ Build an end-to-end pipeline that:
 **Opinion Classifier**
 - Fine-tuned DistilBERT model for 4-class classification
 - Trained on Google Colab (T4 GPU, 20 minutes)
-- Weighted loss function (β=0.9999) to handle severe class imbalance
-- Weighted random sampling during training
+- Iighted loss function (β=0.9999) to handle severe class imbalance
+- Iighted random sampling during training
 
 **Conclusion Generator**
 - GPT-4o-mini via OpenAI API
@@ -65,7 +65,7 @@ Output: Classified opinions + Generated conclusions
 |-------------|--------|
 | Accuracy    | 86.6%  |
 | Macro F1    | 60.6%  |
-| Weighted F1 | 86.2%  |
+| Iighted F1 | 86.2%  |
 
 Per-class F1 scores:
 - Claim: 92%
@@ -94,16 +94,16 @@ Generated 3,983 conclusions (99% topic coverage).
 
 ### The Class Imbalance Challenge
 
-The biggest hurdle in this project was dealing with severely imbalanced data. The dataset contained 89% Evidence and Claim opinions, but only 11% Counterclaim and Rebuttal opinions - roughly a 10:1 split.
+The biggest challenge in this project was dealing with severely imbalanced data. The dataset contained 89% Evidence and Claim opinions, but only 11% Counterclaim and Rebuttal opinions - roughly a 10:1 split.
 
-When we first trained the model using standard methods, it achieved 80% accuracy but had a critical flaw: it only predicted the majority classes. The model essentially ignored Counterclaim and Rebuttal entirely, resulting in 0% F1 scores for these minority classes. While 80% accuracy looked good on paper, the model was practically useless for real classification.
+When I first trained the model using standard methods, it achieved 80% accuracy but had a critical flaw: it only predicted the majority classes. The model essentially ignored Counterclaim and Rebuttal entirely, resulting in 0% F1 scores for these minority classes. While 80% accuracy looked good on paper, the model was practically useless for real classification.
 
-**How we fixed it:**
+**How I fixed it:**
 
-We implemented three strategies to force the model to learn all classes:
-1. Weighted loss function - We penalized errors on minority classes 10,000x more heavily than errors on majority classes
-2. Weighted random sampling - During training, we artificially balanced the batches so the model saw all classes equally
-3. Macro F1 optimization - We optimized for equal performance across all classes rather than overall accuracy
+I implemented three strategies to force the model to learn all classes:
+1. Iighted loss function - I penalized errors on minority classes 10,000x more heavily than errors on majority classes
+2. Iighted random sampling - During training, I artificially balanced the batches so the model saw all classes equally
+3. Macro F1 optimization - I optimized for equal performance across all classes rather than overall accuracy
 
 The result: 86.6% accuracy with all four classes properly predicted. The minority classes (Counterclaim and Rebuttal) now achieve 80% and 61% F1 scores respectively, despite representing only 6.5% and 4.3% of the training data.
 
@@ -115,20 +115,20 @@ The issue: when searching for opinions about "climate change is caused by humans
 
 **The solution:**
 
-We changed the architecture to filter first, then rank:
+I changed the architecture to filter first, then rank:
 ```python
 # For each topic
 opinions_for_topic = filter_by_topic_id(topic.id)
 ranked = semantic_ranking(opinions_for_topic)
 ```
 
-Instead of searching all opinions, we now filter to only opinions that actually belong to that specific topic, then use semantic similarity to rank them by relevance. This simple architectural change boosted recall from 3.5% to 98.2%.
+Instead of searching all opinions, I now filter to only opinions that actually belong to that specific topic, then use semantic similarity to rank them by relevance. This simple architectural change boosted recall from 3.5% to 98.2%.
 
 ### Understanding the Conclusion Generation Metrics
 
 The ROUGE scores for conclusion generation appear low (13-21%). This isn't a quality problem - it's a measurement problem.
 
-ROUGE measures word overlap between generated text and reference text. Our system uses GPT-4o-mini to generate creative, abstractive summaries that paraphrase and synthesize information rather than copying it verbatim. When the model writes "temperatures are rising" instead of "global temperatures show an upward trend," ROUGE penalizes this even though both convey the same meaning.
+ROUGE measures word overlap betIen generated text and reference text. Our system uses GPT-4o-mini to generate creative, abstractive summaries that paraphrase and synthesize information rather than copying it verbatim. When the model writes "temperatures are rising" instead of "global temperatures show an upward trend," ROUGE penalizes this even though both convey the same meaning.
 
 These low ROUGE scores are actually expected and normal for abstractive summarization systems. The summaries themselves are coherent and capture the key points - they just use different words than the reference texts.
 
@@ -171,7 +171,6 @@ These low ROUGE scores are actually expected and normal for abstractive summariz
 ### Prerequisites
 
 - Python 3.10 or higher
-- 8GB RAM minimum
 - OpenAI API key
 
 ### Installation
@@ -234,7 +233,7 @@ The opinion classifier was trained on Google Colab with the following configurat
 - Batch size: 16
 - Learning rate: 2e-5
 - Optimizer: AdamW
-- Loss: Weighted cross-entropy (β=0.9999)
+- Loss: Iighted cross-entropy (β=0.9999)
 - Training time: ~20 minutes
 
 Training data split:
@@ -245,65 +244,24 @@ Training data split:
 
 ### Classification Performance
 
-We achieved 86.6% accuracy overall, which is solid, but the real success story is in how the model handles minority classes. Despite Counterclaim opinions making up only 6.5% of the training data and Rebuttal opinions just 4.3%, the model still predicts them correctly 80% and 61% of the time respectively.
+I achieved 86.6% accuracy overall, which is solid, but the real success story is in how the model handles minority classes. Despite Counterclaim opinions making up only 6.5% of the training data and Rebuttal opinions just 4.3%, the model still predicts them correctly 80% and 61% of the time respectively.
 
-This was the hardest part of the project to get right. Most classification models would simply ignore these rare classes and just predict the common ones (Evidence and Claim). By using weighted loss functions and balanced sampling, we forced the model to pay attention to all four opinion types.
+This was the hardest part of the project to get right. Most classification models would simply ignore these rare classes and just predict the common ones (Evidence and Claim). By using Iighted loss functions and balanced sampling, I forced the model to pay attention to all four opinion types.
 
-The macro F1 score of 60.6% means that when we average the performance across all classes equally (not weighted by how common they are), the model performs reasonably well across the board.
+The macro F1 score of 60.6% means that when I average the performance across all classes equally (not Iighted by how common they are), the model performs reasonably Ill across the board.
 
 ### Topic Matching Performance
 
-The matching system now achieves 98.2% recall and 100% precision. What this means in practice: when we ask it to find the top 10 opinions for a given topic, it successfully finds 98.2% of the relevant opinions while ensuring every single result actually belongs to that topic.
+The matching system now achieves 98.2% recall and 100% precision. What this means in practice: when I ask it to find the top 10 opinions for a given topic, it successfully finds 98.2% of the relevant opinions while ensuring every single result actually belongs to that topic.
 
-This near-perfect performance came from rethinking the architecture. Instead of searching through all 27,000 opinions (which found similar-sounding but irrelevant opinions from other topics), we now filter to the correct topic first, then rank by semantic similarity within that subset.
+This near-perfect performance came from rethinking the architecture. Instead of searching through all 27,000 opinions (which found similar-sounding but irrelevant opinions from other topics), I now filter to the correct topic first, then rank by semantic similarity within that subset.
 
 ### Conclusion Quality
 
-The ROUGE scores (13-21%) look low at first glance, but they're actually normal for this type of task. ROUGE measures how much the generated text matches the reference text word-for-word. Since we're using an LLM to write creative summaries rather than copying text, we naturally get lower scores.
+The ROUGE scores (13-21%) look low at first glance, but they're actually normal for this type of task. ROUGE measures how much the generated text matches the reference text word-for-word. Since I're using an LLM to write creative summaries rather than copying text, I naturally get loIr scores.
 
 Think of it this way: if the reference says "Scientists believe climate change is real" and our model writes "Research supports the existence of climate change," a human would say these mean the same thing. But ROUGE sees them as very different because they use different words.
 
-The generated conclusions successfully capture the main arguments and present balanced summaries - they just do it in their own words, which is exactly what we want from an abstractive summarization system.
+The generated conclusions successfully capture the main arguments and present balanced summaries - they just do it in their own words, which is exactly what I want from an abstractive summarization system.
 
-## Dependencies
 
-Core dependencies:
-- transformers==4.36.0
-- torch==2.1.0
-- sentence-transformers==2.2.2
-- openai==1.6.1
-- grpcio==1.60.0
-- redis==5.0.1
-- scikit-learn==1.3.2
-- rouge-score==0.1.2
-
-See `requirements.txt` for complete list.
-
-## System Requirements
-
-- CPU: Multi-core processor (inference runs on CPU)
-- RAM: 8GB minimum (model loading requires ~500MB)
-- Disk: ~1GB (model weights + dependencies)
-- Network: Required for OpenAI API calls
-
-## Summary
-
-This project successfully builds a complete pipeline for analyzing argumentative opinions from social media. The main technical achievements include:
-
-**1. Solving the Class Imbalance Problem**
-Through weighted loss functions and balanced sampling, we trained a model that correctly predicts all four opinion types, even the rare ones that make up less than 5% of the data.
-
-**2. Near-Perfect Topic Matching**
-By redesigning the matching architecture to filter before ranking, we achieved 98.2% recall - a massive improvement from the initial 3.5%.
-
-**3. End-to-End Integration**
-The system combines multiple ML components (DistilBERT for classification, sentence transformers for matching, GPT-4o-mini for conclusions) into a working pipeline with dual API interfaces.
-
-**4. Production-Ready Deployment**
-Both gRPC (for low-latency synchronous requests) and Redis (for asynchronous queue processing) interfaces are fully functional and tested.
-
-The two biggest challenges were handling severely imbalanced training data and figuring out the right architecture for topic matching. Both required rethinking our initial approaches, but the solutions turned out to be relatively straightforward once we understood the root causes.
-
-## License
-
-This project was developed as part of academic research.

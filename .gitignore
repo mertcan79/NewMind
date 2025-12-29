@@ -120,3 +120,19 @@ models/trained_classifier_v3/
 # OS
 .DS_Store
 Thumbs.db
+
+# Model artifacts
+models/trained_classifier/
+training/trained_classifier.zip
+
+# General ML junk
+*.safetensors
+*.pt
+*.bin
+*.ckpt
+*.zip
+
+# Python
+__pycache__/
+.env
+.conda/
