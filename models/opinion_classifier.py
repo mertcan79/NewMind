@@ -1,10 +1,8 @@
 import os
+
 import torch
 import torch.nn.functional as F
-from transformers import (
-    DistilBertTokenizerFast,
-    DistilBertForSequenceClassification
-)
+from transformers import DistilBertForSequenceClassification, DistilBertTokenizerFast
 
 LABEL_MAP = {
     0: "Claim",

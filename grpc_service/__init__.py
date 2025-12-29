@@ -7,7 +7,7 @@
 #   Change: import opinion_service_pb2 as opinion__service__pb2
 #   To: from grpc_service import opinion_service_pb2 as opinion__service__pb2
 
-from .server import serve, OpinionAnalyzerServicer
-from .client import OpinionAnalyzerClient
+from .client import OpinionAnalysisClient
+from .server import serve
 
-__all__ = ["serve", "OpinionAnalyzerServicer", "OpinionAnalyzerClient"]
+__all__ = ["serve", "OpinionAnalysisClient"]

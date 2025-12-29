@@ -11,13 +11,13 @@ Key ideas:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
-import numpy as np
 import pickle
 import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import numpy as np
 
 # Keep same repo-style import behavior
 sys.path.append(str(Path(__file__).parent.parent))
@@ -74,7 +74,9 @@ class TopicMatcher:
         if self.model is not None:
             return
 
-        from sentence_transformers import SentenceTransformer  # local import to keep deps optional
+        from sentence_transformers import (
+            SentenceTransformer,  # local import to keep deps optional
+        )
 
         self.model = SentenceTransformer(self.model_name)
 

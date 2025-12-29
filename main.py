@@ -32,9 +32,9 @@ def train_classifier(
     Returns:
         Evaluation results dict
     """
+    from config.settings import settings
     from data import DataProcessor
     from models import OpinionClassifier
-    from config.settings import settings
 
     # SET DEFAULT PATHS
     topics_path = topics_path or str(settings.DATA_DIR / "topics.csv")
@@ -80,7 +80,7 @@ def train_classifier(
 
     results = classifier.evaluate(test_texts, test_labels)
 
-    print(f"\nTest Results:")
+    print("\nTest Results:")
     print(f"  Accuracy: {results['accuracy']:.4f}")
     print(f"  F1 (weighted): {results['f1_weighted']:.4f}")
     print(f"  F1 (macro): {results['f1_macro']:.4f}")
@@ -106,9 +106,9 @@ def train_topic_matcher(
         conclusions_path: Path to conclusions.csv
         output_dir: Directory to save topic matcher
     """
+    from config.settings import settings
     from data import DataProcessor
     from models import TopicMatcher
-    from config.settings import settings
 
     # SET DEFAULT PATHS
     topics_path = topics_path or str(settings.DATA_DIR / "topics.csv")
@@ -161,10 +161,10 @@ def evaluate_all(
         conclusions_path: Path to conclusions.csv
         sample_size: Number of samples to evaluate on
     """
-    from evaluation import Evaluator
-    from data import DataProcessor
-    from models import OpinionClassifier
     from config.settings import settings
+    from data import DataProcessor
+    from evaluation import Evaluator
+    from models import OpinionClassifier
 
     # SET DEFAULT PATHS
     topics_path = topics_path or str(settings.DATA_DIR / "topics.csv")
@@ -226,7 +226,7 @@ def run_grpc(
         enable_conclusion: Enable conclusion generation (requires OpenAI key)
     """
     from grpc_service import serve
-    from models import TopicMatcher, OpinionClassifier, ConclusionGenerator
+    from models import ConclusionGenerator, OpinionClassifier, TopicMatcher
 
     # LOAD MODELS IF PATHS PROVIDED
     topic_matcher = None
@@ -263,7 +263,7 @@ def run_worker(classifier_path: str = None, enable_conclusion: bool = False):
         enable_conclusion: Enable conclusion generation
     """
     from events import EventConsumer
-    from models import OpinionClassifier, ConclusionGenerator
+    from models import ConclusionGenerator, OpinionClassifier
 
     consumer = EventConsumer()
     consumer.connect()

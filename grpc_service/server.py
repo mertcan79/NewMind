@@ -1,333 +1,319 @@
 """
 gRPC Server for Opinion Analysis Service.
 
-This server exposes ML models via gRPC for high-performance inference.
+Implements the OpinionAnalysisService defined in opinion_service.proto.
 
 Usage:
-    # Start server with models
-    from grpc_service import serve
-    from models import TopicMatcher, OpinionClassifier, ConclusionGenerator
-    
-    classifier = OpinionClassifier()
-    classifier.load_model()
-    
-    serve(classifier=classifier, port=50051)
+    python grpc_service/server.py
 """
-import grpc
-from concurrent import futures
-from pathlib import Path
+import os
 import sys
 import time
-from typing import Optional
+from concurrent import futures
+from pathlib import Path
+
+import grpc
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import settings
+from dotenv import load_dotenv
 
-# Lazy import of protobuf modules (may not be compiled yet)
-pb2 = None
-pb2_grpc = None
+from grpc_service import opinion_service_pb2, opinion_service_pb2_grpc
+from models.conclusion_generator import ConclusionGenerator
+from models.opinion_classifier import OpinionClassifier
+from models.topic_matcher import TopicMatcher
 
-
-def _load_protos():
-    """Lazily load protobuf modules."""
-    global pb2, pb2_grpc
-    if pb2 is None:
-        try:
-            from grpc_service import opinion_service_pb2, opinion_service_pb2_grpc
-            pb2 = opinion_service_pb2
-            pb2_grpc = opinion_service_pb2_grpc
-            return True
-        except ImportError as e:
-            print(f"Error loading protos: {e}")
-            print("Please compile protos first. See grpc_service/__init__.py for instructions.")
-            return False
-    return True
+# Load environment variables
+load_dotenv()
 
 
-class OpinionAnalyzerServicer:
+class OpinionAnalysisServicer(opinion_service_pb2_grpc.OpinionAnalysisServiceServicer):
     """
     gRPC service implementation for opinion analysis.
-    
+
     Provides endpoints for:
-    - Topic matching (sentence similarity)
-    - Opinion classification (DistilBERT)
-    - Conclusion generation (OpenAI)
-    - Full analysis pipeline
+    - Opinion classification (single and batch)
+    - Topic matching
+    - Conclusion generation
+    - Full topic analysis pipeline
     """
-    
-    def __init__(
-        self,
-        topic_matcher=None,
-        classifier=None,
-        conclusion_generator=None
-    ):
-        """
-        Initialize servicer with ML models.
-        
-        Args:
-            topic_matcher: Initialized TopicMatcher instance
-            classifier: Initialized OpinionClassifier instance
-            conclusion_generator: Initialized ConclusionGenerator instance
-        """
-        self.topic_matcher = topic_matcher
-        self.classifier = classifier
-        self.conclusion_generator = conclusion_generator
-        
-        self._services = {
-            "topic_matcher": topic_matcher is not None,
-            "classifier": classifier is not None,
-            "conclusion_generator": conclusion_generator is not None
-        }
-        
-        print("OpinionAnalyzerServicer initialized:")
-        for service, status in self._services.items():
-            print(f"  {service}: {'✓' if status else '✗'}")
-    
-    def MatchOpinionToTopic(self, request, context):
-        """Match an opinion to the most relevant topic(s)."""
-        
-        if not _load_protos():
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details("Protos not compiled")
-            return pb2.MatchResponse() if pb2 else None
-        
+
+    def __init__(self):
+        """Initialize servicer with ML models."""
+        print("Initializing OpinionAnalysisService...")
+
+        # Initialize classifier
         try:
-            if not self._services["topic_matcher"]:
-                return pb2.MatchResponse(
-                    success=False,
-                    error_message="Topic matcher not initialized"
+            self.classifier = OpinionClassifier()
+            print("✓ Classifier loaded")
+        except Exception as e:
+            print(f"✗ Classifier failed: {e}")
+            self.classifier = None
+
+        # Initialize topic matcher
+        try:
+            self.topic_matcher = TopicMatcher()
+            self.topic_matcher.load_model()
+            print("✓ Topic matcher loaded")
+        except Exception as e:
+            print(f"✗ Topic matcher failed: {e}")
+            self.topic_matcher = None
+
+        # Initialize conclusion generator
+        try:
+            api_key = os.getenv("OPENAI_API_KEY")
+            if api_key:
+                self.conclusion_generator = ConclusionGenerator(api_key=api_key)
+                self.conclusion_generator.initialize()
+                print("✓ Conclusion generator loaded")
+            else:
+                print("✗ OPENAI_API_KEY not set - conclusion generation disabled")
+                self.conclusion_generator = None
+        except Exception as e:
+            print(f"✗ Conclusion generator failed: {e}")
+            self.conclusion_generator = None
+
+    def ClassifyOpinion(self, request, context):
+        """Classify a single opinion."""
+        try:
+            if not self.classifier:
+                context.set_code(grpc.StatusCode.UNAVAILABLE)
+                context.set_details("Classifier not available")
+                return opinion_service_pb2.ClassifyResponse()
+
+            result = self.classifier.predict(request.text)
+
+            return opinion_service_pb2.ClassifyResponse(
+                opinion_type=result["label"],
+                confidence=result["confidence"],
+                probabilities=result["probabilities"]
+            )
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Classification error: {str(e)}")
+            return opinion_service_pb2.ClassifyResponse()
+
+    def ClassifyBatch(self, request, context):
+        """Classify multiple opinions in batch."""
+        try:
+            if not self.classifier:
+                context.set_code(grpc.StatusCode.UNAVAILABLE)
+                context.set_details("Classifier not available")
+                return opinion_service_pb2.BatchClassifyResponse()
+
+            batch_results = self.classifier.batch_predict(list(request.texts))
+
+            results = []
+            for result in batch_results:
+                results.append(
+                    opinion_service_pb2.ClassifyResponse(
+                        opinion_type=result["label"],
+                        confidence=result["confidence"],
+                        probabilities=result["probabilities"]
+                    )
                 )
-            
-            top_k = request.top_k if request.top_k > 0 else 1
-            threshold = request.threshold if request.threshold > 0 else settings.SIMILARITY_THRESHOLD
-            
-            matches = self.topic_matcher.match_opinion(
-                opinion_text=request.opinion_text,
+
+            return opinion_service_pb2.BatchClassifyResponse(results=results)
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Batch classification error: {str(e)}")
+            return opinion_service_pb2.BatchClassifyResponse()
+
+    def MatchOpinionsToTopic(self, request, context):
+        """Match opinions to a topic."""
+        try:
+            if not self.topic_matcher:
+                context.set_code(grpc.StatusCode.UNAVAILABLE)
+                context.set_details("Topic matcher not available")
+                return opinion_service_pb2.MatchResponse()
+
+            # Encode topic
+            topic_ids = [request.topic_id]
+            topic_texts = [request.topic_text]
+            self.topic_matcher.encode_topics(topic_ids, topic_texts)
+
+            # Encode opinions
+            opinion_ids = [op.id for op in request.opinions]
+            opinion_texts = [op.text for op in request.opinions]
+            self.topic_matcher.encode_opinions(opinion_ids, opinion_texts)
+
+            # Compute similarity
+            self.topic_matcher.compute_similarity_matrix()
+
+            # Get top matches
+            top_k = request.top_k if request.top_k > 0 else 10
+            threshold = request.threshold if request.HasField('threshold') else None
+
+            matches = self.topic_matcher.top_opinions_for_topic(
+                topic_id=request.topic_id,
                 top_k=top_k,
                 threshold=threshold
             )
-            
-            topic_matches = [
-                pb2.TopicMatch(
-                    topic_id=m["topic_id"],
-                    topic_text=m["topic_text"],
-                    similarity=m["similarity"]
+
+            # Convert to proto format
+            matched_opinions = []
+            for match in matches:
+                matched_opinions.append(
+                    opinion_service_pb2.MatchedOpinion(
+                        opinion_id=match["opinion_id"],
+                        opinion_text=match["opinion_text"],
+                        similarity=match["similarity"]
+                    )
                 )
-                for m in matches
-            ]
-            
-            return pb2.MatchResponse(matches=topic_matches, success=True)
-            
+
+            return opinion_service_pb2.MatchResponse(matches=matched_opinions)
+
         except Exception as e:
-            return pb2.MatchResponse(success=False, error_message=str(e))
-    
-    def ClassifyOpinion(self, request, context):
-        """Classify a single opinion."""
-        
-        if not _load_protos():
             context.set_code(grpc.StatusCode.INTERNAL)
-            return pb2.ClassifyResponse() if pb2 else None
-        
-        try:
-            if not self._services["classifier"]:
-                return pb2.ClassifyResponse(
-                    success=False,
-                    error_message="Classifier not initialized"
-                )
-            
-            result = self.classifier.predict_single(request.opinion_text)
-            
-            return pb2.ClassifyResponse(
-                predicted_type=result["predicted_type"],
-                predicted_id=result["predicted_id"],
-                probabilities=result["probabilities"],
-                success=True
-            )
-            
-        except Exception as e:
-            return pb2.ClassifyResponse(success=False, error_message=str(e))
-    
-    def ClassifyOpinionsBatch(self, request, context):
-        """Classify multiple opinions in batch."""
-        
-        if not _load_protos():
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return pb2.BatchClassifyResponse() if pb2 else None
-        
-        try:
-            if not self._services["classifier"]:
-                return pb2.BatchClassifyResponse(
-                    success=False,
-                    error_message="Classifier not initialized"
-                )
-            
-            results = []
-            for text in request.opinion_texts:
-                result = self.classifier.predict_single(text)
-                results.append(pb2.ClassifyResponse(
-                    predicted_type=result["predicted_type"],
-                    predicted_id=result["predicted_id"],
-                    probabilities=result["probabilities"],
-                    success=True
-                ))
-            
-            return pb2.BatchClassifyResponse(results=results, success=True)
-            
-        except Exception as e:
-            return pb2.BatchClassifyResponse(success=False, error_message=str(e))
-    
+            context.set_details(f"Matching error: {str(e)}")
+            return opinion_service_pb2.MatchResponse()
+
     def GenerateConclusion(self, request, context):
-        """Generate conclusion from topic and opinions."""
-        
-        if not _load_protos():
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return pb2.ConclusionResponse() if pb2 else None
-        
+        """Generate conclusion for a topic with opinions."""
         try:
-            if not self._services["conclusion_generator"]:
-                return pb2.ConclusionResponse(
-                    success=False,
-                    error_message="Conclusion generator not initialized. Set OPENAI_API_KEY."
-                )
-            
+            if not self.conclusion_generator:
+                context.set_code(grpc.StatusCode.UNAVAILABLE)
+                context.set_details("Conclusion generator not available (OPENAI_API_KEY not set)")
+                return opinion_service_pb2.ConclusionResponse()
+
+            # Convert proto opinions to dict format
             opinions = [
-                {"text": op.text, "type": op.type}
+                {"text": op.text, "type": op.opinion_type}
                 for op in request.opinions
             ]
-            
-            temperature = request.temperature if request.temperature > 0 else 0.7
-            max_tokens = request.max_tokens if request.max_tokens > 0 else 200
-            
+
+            # Generate conclusion
             conclusion = self.conclusion_generator.generate(
                 topic_text=request.topic_text,
-                opinions=opinions,
-                temperature=temperature,
-                max_tokens=max_tokens
+                opinions=opinions
             )
-            
-            return pb2.ConclusionResponse(conclusion=conclusion, success=True)
-            
+
+            return opinion_service_pb2.ConclusionResponse(conclusion=conclusion)
+
         except Exception as e:
-            return pb2.ConclusionResponse(success=False, error_message=str(e))
-    
-    def AnalyzeOpinions(self, request, context):
-        """Full pipeline: classify opinions and optionally generate conclusion."""
-        
-        if not _load_protos():
             context.set_code(grpc.StatusCode.INTERNAL)
-            return pb2.AnalyzeResponse() if pb2 else None
-        
+            context.set_details(f"Conclusion generation error: {str(e)}")
+            return opinion_service_pb2.ConclusionResponse()
+
+    def AnalyzeTopic(self, request, context):
+        """Full pipeline: match + classify + conclude."""
         try:
-            classified_opinions = []
-            
-            # Step 1: Classify all opinions
-            if self._services["classifier"]:
-                for opinion_text in request.opinion_texts:
-                    result = self.classifier.predict_single(opinion_text)
-                    classified_opinions.append(
-                        pb2.ClassifiedOpinion(
-                            text=opinion_text,
-                            predicted_type=result["predicted_type"],
-                            confidence=max(result["probabilities"].values())
+            # Stage 1: Match opinions to topic
+            matched_opinions = []
+            if self.topic_matcher:
+                # Encode topic
+                self.topic_matcher.encode_topics([request.topic_id], [request.topic_text])
+
+                # Encode all opinions
+                opinion_ids = [op.id for op in request.all_opinions]
+                opinion_texts = [op.text for op in request.all_opinions]
+                self.topic_matcher.encode_opinions(opinion_ids, opinion_texts)
+
+                # Compute similarity and match
+                self.topic_matcher.compute_similarity_matrix()
+                top_k = request.top_k if request.top_k > 0 else 10
+
+                matches = self.topic_matcher.top_opinions_for_topic(
+                    topic_id=request.topic_id,
+                    top_k=top_k
+                )
+
+                for match in matches:
+                    matched_opinions.append(
+                        opinion_service_pb2.MatchedOpinion(
+                            opinion_id=match["opinion_id"],
+                            opinion_text=match["opinion_text"],
+                            similarity=match["similarity"]
                         )
                     )
-            
-            # Step 2: Generate conclusion if requested
+
+            # Stage 2: Classify matched opinions
+            classified_opinions = []
+            type_distribution = {}
+            total_similarity = 0.0
+
+            if self.classifier and matched_opinions:
+                for matched_op in matched_opinions:
+                    result = self.classifier.predict(matched_op.opinion_text)
+                    opinion_type = result["label"]
+
+                    classified_opinions.append(
+                        opinion_service_pb2.ClassifiedOpinion(
+                            text=matched_op.opinion_text,
+                            opinion_type=opinion_type
+                        )
+                    )
+
+                    # Update type distribution
+                    type_distribution[opinion_type] = type_distribution.get(opinion_type, 0) + 1
+                    total_similarity += matched_op.similarity
+
+            # Stage 3: Generate conclusion
             conclusion = ""
-            if request.generate_conclusion and self._services["conclusion_generator"]:
+            if request.generate_conclusion and self.conclusion_generator and classified_opinions:
                 opinions = [
-                    {"text": co.text, "type": co.predicted_type}
+                    {"text": co.text, "type": co.opinion_type}
                     for co in classified_opinions
                 ]
-                
                 conclusion = self.conclusion_generator.generate(
                     topic_text=request.topic_text,
                     opinions=opinions
                 )
-            
-            return pb2.AnalyzeResponse(
-                topic_text=request.topic_text,
-                classified_opinions=classified_opinions,
-                conclusion=conclusion,
-                success=True
+
+            # Calculate metrics
+            matched_count = len(matched_opinions)
+            avg_similarity = total_similarity / matched_count if matched_count > 0 else 0.0
+
+            metrics = opinion_service_pb2.AnalysisMetrics(
+                total_opinions_analyzed=len(request.all_opinions),
+                matched_opinions=matched_count,
+                avg_similarity=avg_similarity,
+                type_distribution=type_distribution
             )
-            
+
+            return opinion_service_pb2.TopicAnalysisResponse(
+                topic_id=request.topic_id,
+                matched_opinions=matched_opinions,
+                classified_opinions=classified_opinions,
+                conclusion=conclusion if conclusion else None,
+                metrics=metrics
+            )
+
         except Exception as e:
-            return pb2.AnalyzeResponse(success=False, error_message=str(e))
-    
-    def HealthCheck(self, request, context):
-        """Health check endpoint."""
-        
-        if not _load_protos():
             context.set_code(grpc.StatusCode.INTERNAL)
-            return pb2.HealthResponse() if pb2 else None
-        
-        all_healthy = all(self._services.values())
-        
-        return pb2.HealthResponse(
-            healthy=all_healthy,
-            status="All services running" if all_healthy else "Some services not initialized",
-            services=self._services
-        )
+            context.set_details(f"Analysis error: {str(e)}")
+            return opinion_service_pb2.TopicAnalysisResponse()
 
 
-def serve(
-    topic_matcher=None,
-    classifier=None,
-    conclusion_generator=None,
-    host: str = None,
-    port: int = None,
-    max_workers: int = 10
-):
+def serve(host="localhost", port=50051, max_workers=10):
     """
     Start the gRPC server.
-    
+
     Args:
-        topic_matcher: Initialized TopicMatcher (optional)
-        classifier: Initialized OpinionClassifier (optional)
-        conclusion_generator: Initialized ConclusionGenerator (optional)
-        host: Server host (default: from settings)
-        port: Server port (default: from settings)
+        host: Server host
+        port: Server port
         max_workers: Thread pool size
-    
-    Example:
-        from models import OpinionClassifier
-        from grpc_service import serve
-        
-        classifier = OpinionClassifier()
-        classifier.load_model()
-        
-        serve(classifier=classifier)
     """
-    if not _load_protos():
-        print("Cannot start server: protos not compiled")
-        return
-    
-    host = host or settings.GRPC_HOST
-    port = port or settings.GRPC_PORT
-    
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers))
-    
-    servicer = OpinionAnalyzerServicer(
-        topic_matcher=topic_matcher,
-        classifier=classifier,
-        conclusion_generator=conclusion_generator
-    )
-    
-    pb2_grpc.add_OpinionAnalyzerServicer_to_server(servicer, server)
-    
+
+    servicer = OpinionAnalysisServicer()
+
+    opinion_service_pb2_grpc.add_OpinionAnalysisServiceServicer_to_server(servicer, server)
+
     server_address = f"{host}:{port}"
     server.add_insecure_port(server_address)
-    
-    print(f"\n{'='*50}")
-    print(f"Starting gRPC server on {server_address}")
-    print(f"{'='*50}\n")
-    
+
+    print(f"\n{'='*60}")
+    print(f"Starting gRPC OpinionAnalysisService on {server_address}")
+    print(f"{'='*60}\n")
+
     server.start()
-    
+
     try:
+        print("Server running. Press Ctrl+C to stop.")
         while True:
             time.sleep(86400)  # One day
     except KeyboardInterrupt:
@@ -337,6 +323,4 @@ def serve(
 
 
 if __name__ == "__main__":
-    # Test server startup (no models loaded)
-    print("Starting gRPC server in test mode (no models)...")
     serve()

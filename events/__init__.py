@@ -1,5 +1,5 @@
 # EVENTS PACKAGE INITIALIZATION
-from .producer import EventProducer
 from .consumer import EventConsumer
+from .producer import EventProducer
 
 __all__ = ["EventProducer", "EventConsumer"]

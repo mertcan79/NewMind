@@ -9,9 +9,9 @@ pydantic-settings>=2.0.0
 python-dotenv>=1.0.0
 
 # DEEP LEARNING
-torch>=2.0.0
-transformers>=4.30.0
-sentence-transformers>=2.2.0
+torch>=2.2.2
+transformers>=4.36.2
+sentence-transformers>=2.7.0
 
 # OPENAI
 openai>=1.0.0
@@ -19,9 +19,6 @@ openai>=1.0.0
 # REDIS (EVENT-DRIVEN)
 redis>=4.5.0
 
-# GRPC
-grpcio>=1.50.0
-grpcio-tools>=1.50.0
 
 # EVALUATION
 rouge-score>=0.1.2

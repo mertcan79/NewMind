@@ -3,9 +3,10 @@ CONCLUSION GENERATOR MODULE
 Uses OpenAI API to generate conclusions from grouped opinions.
 """
 import os
-from typing import List, Dict, Optional
-from pathlib import Path
 import sys
+from pathlib import Path
+from typing import Dict, List
+
 sys.path.append(str(Path(__file__).parent.parent))
 
 from config.settings import settings

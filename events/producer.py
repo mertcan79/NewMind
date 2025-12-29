@@ -2,13 +2,14 @@
 REDIS EVENT PRODUCER
 Publishes opinion analysis events to Redis queue.
 """
-import redis
 import json
+import sys
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
 from pathlib import Path
-import sys
+from typing import Dict, List, Optional
+
+import redis
 
 sys.path.append(str(Path(__file__).parent.parent))
 

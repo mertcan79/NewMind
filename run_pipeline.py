@@ -36,8 +36,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 # Import pipeline modules
-from pipeline import run_matching, run_classification, run_conclusions
 from evaluation import evaluate_all
+from pipeline import run_classification, run_conclusions, run_matching
 
 
 def print_header(text: str):
@@ -71,7 +71,7 @@ def run_full_pipeline(
         api_key: OpenAI API key (optional)
     """
     print_header("NEWMIND SOCIAL MEDIA ANALYSIS PIPELINE")
-    print(f"\nConfiguration:")
+    print("\nConfiguration:")
     print(f"  Top-k: {top_k}")
     print(f"  Max topics: {max_topics or 'all'}")
     print(f"  Skip LLM: {no_llm}")
@@ -163,7 +163,7 @@ def run_full_pipeline(
         print("\n\nPipeline interrupted by user.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\nERROR: Pipeline failed with exception:")
+        print("\n\nERROR: Pipeline failed with exception:")
         print(f"  {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()

@@ -1,6 +1,122 @@
+# Environment and secrets
 .env
-main.ipynb
-PROJECT_SUMMARY.md
-models/trained_classifier/
+.env.*
+
+# Exclude all markdown files except README.md
+*.md
+!README.md
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Development folders
+.claude/
+.conda/
+.ruff_cache/
+examples/
+
+# Development and testing scripts - only keep main.py and run_pipeline.py
+test_*.py
+run_pipeline_fast.py
+run_complete_pipeline.py
+run_pipeline_fixed.py
+check_progress.sh
+improve_matching.py
+fix_metrics.py
+evaluate_topic_aware.py
+train_simple.py
+test_topic_matching.py
+test_trained_model.py
+quick_train.py
+solution.py
+train_and_evaluate.py
+test_system.py
+verify_project.py
+
+# Development markdown files - hide ALL except README.md
+ACCOMPLISHMENTS.md
+ACTUAL_RESULTS.md
+FILES_GENERATED.md
+FILE_INDEX.md
+FINAL_RESULTS.md
+FINAL_STATUS.md
+GROUND_TRUTH_VALIDATION.md
+GRPC_REDIS_GUIDE.md
+GRPC_REDIS_IMPLEMENTATION.md
+IMPLEMENTATION_COMPLETE.md
+METRICS_ANALYSIS.md
+METRICS_FIX_SUMMARY.md
+PIPELINE_PROGRESS_REPORT.md
+PIPELINE_RUNNING.md
+PIPELINE_STATUS.md
+PIPELINE_TEST_REPORT.md
+PRESENTATION_GUIDE.md
+PROJECT_COMPLETE.md
+PROJECT_COMPLETION.md
+QUICK_REFERENCE.md
+QUICK_RUN_GUIDE.md
+QUICK_START.md
+TOPIC_AWARE_MATCHING_SUCCESS.md
+REPOSITORY_FINALIZED.md
+SAMPLE_DATA_ANALYSIS.md
+TEST_RESULTS_SUMMARY.md
+TRAINING_RESULTS.md
+fixes.md
+outline.md
+task.md
+
+# Development text files - hide ALL except requirements.txt
+ACCOMPLISHMENTS.txt
+ACTUAL_RESULTS.txt
+FILES_GENERATED.txt
+FINAL_STATUS.txt
+PROJECT_FINALIZED.txt
+PROJECT_READY.txt
+PROJECT_STATUS_FINAL.txt
+
+# Logs and temporary files
+*.log
+*.output
+*.txt
+!requirements.txt
+nohup.out
+grpc_server.log
+redis_consumer.log
+training_log.txt
+final_pipeline.log
+complete_run.log
+pipeline_final.log
+dump.rdb
+
+# Claude Code artifacts
+.claude/
+*.output
+/tmp/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Old model versions
 models/trained_classifier_v1/
 models/trained_classifier_v3/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

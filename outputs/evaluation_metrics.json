@@ -1,0 +1,19 @@
+{
+  "matching": {
+    "recall@10": 0.03487280934647624,
+    "precision@10": 0.02182470617950479,
+    "topics_evaluated": 4022
+  },
+  "classification": {
+    "accuracy": 0.8660043241017193,
+    "macro_f1": 0.6061105078415958,
+    "weighted_f1": 0.8620711837798095,
+    "samples_evaluated": 38852
+  },
+  "conclusions": {
+    "rouge1_f1": 0.21717222160163338,
+    "rouge2_f1": 0.033324039502488655,
+    "rougeL_f1": 0.13446998777210115,
+    "topics_evaluated": 3274
+  }
+}
