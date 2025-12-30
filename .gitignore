@@ -131,7 +131,7 @@ training/trained_classifier.zip
 *.bin
 *.ckpt
 *.zip
-
+*.ipynb
 # Python
 __pycache__/
 .env

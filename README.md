@@ -1,6 +1,6 @@
-# Opinion Analysis Pipeline
+# NewMind Take Home Task
 
-A machine learning system for processing and analyzing argumentative opinions from social media discussions.
+An ML system for processing and analyzing argumentative opinions from social media discussions.
 
 ## Objective
 
@@ -109,9 +109,7 @@ The result: 86.6% accuracy with all four classes properly predicted. The minorit
 
 ### The Topic Matching Architecture Problem
 
-Our initial approach searched for semantically similar opinions across all 27,000 opinions in the dataset. This seemed logical, but produced terrible results: only 3.5% recall.
-
-The issue: when searching for opinions about "climate change is caused by humans," the system would find semantically similar opinions like "scientists agree on global warming" - which sounds related but actually belonged to a completely different topic in the dataset.
+My initial approach searched for semantically similar opinions across all 27,000 opinions in the dataset. This seemed logical, but produced bad results.
 
 **The solution:**
 
@@ -126,7 +124,7 @@ Instead of searching all opinions, I now filter to only opinions that actually b
 
 ### Understanding the Conclusion Generation Metrics
 
-The ROUGE scores for conclusion generation appear low (13-21%). This isn't a quality problem - it's a measurement problem.
+The ROUGE scores for conclusion generation appear low (13-21%).
 
 ROUGE measures word overlap betIen generated text and reference text. Our system uses GPT-4o-mini to generate creative, abstractive summaries that paraphrase and synthesize information rather than copying it verbatim. When the model writes "temperatures are rising" instead of "global temperatures show an upward trend," ROUGE penalizes this even though both convey the same meaning.
 
@@ -146,7 +144,7 @@ These low ROUGE scores are actually expected and normal for abstractive summariz
 ├── training/
 │   ├── train_classifier.py     # Training script
 │   └── models/
-│       └── trained_classifier/ # Saved model (268MB)
+│       └── trained_classifier/ # Saved model 
 ├── grpc_service/
 │   ├── server.py               # gRPC server
 │   ├── client.py               # Client implementation
